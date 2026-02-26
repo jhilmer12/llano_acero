@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clientes - Ferretería</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: #2c3e50;
+        }
+        .sidebar .nav-link {
+            color: #ecf0f1;
+            padding: 15px 20px;
+            border-left: 4px solid transparent;
+        }
+        .sidebar .nav-link:hover {
+            background: #34495e;
+            border-left: 4px solid #3498db;
+        }
+        .sidebar .nav-link.active {
+            background: #34495e;
+            border-left: 4px solid #3498db;
+        }
+        .customer-card {
+            transition: transform 0.2s;
+        }
+        .customer-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar p-0">
+                <div class="position-sticky pt-3">
+                    <div class="text-center p-3 border-bottom">
+                        <i class="fas fa-tools fa-2x text-white mb-2"></i>
+                        <h5 class="text-white mb-0">Ferretería</h5>
+                        <small class="text-muted" id="userRole"></small>
+                    </div>
+                    <ul class="nav flex-column mt-3" id="mainMenu">
+                        <!-- Menú se carga dinámicamente -->
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4" style="background: #f8f9fa; min-height: 100vh;">
+                <!-- Navbar -->
+                <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+                    <div class="container-fluid">
+                        <button class="btn btn-link d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        
+                        <div class="d-flex align-items-center">
+                            <span class="navbar-text me-3" id="userInfo"></span>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                                    <i class="fas fa-user me-2"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Content -->
+                <div class="container-fluid mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2><i class="fas fa-users me-2"></i>Gestión de Clientes</h2>
+                        <button class="btn btn-primary" onclick="showCustomerModal()">
+                            <i class="fas fa-plus me-2"></i>Nuevo Cliente
+                        </button>
+                    </div>
+
+                    <!-- Filtros -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                        <input type="text" class="form-control" placeholder="Buscar clientes..." id="searchInput">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Clientes -->
+                    <div class="row" id="customersContainer">
+                        <!-- Los clientes se cargan dinámicamente -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal para clientes -->
+    <div class="modal fade" id="customerModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="customerModalTitle">Nuevo Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="customerForm">
+                        <input type="hidden" id="customerId">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="customerName" class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" id="customerName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="customerPhone" class="form-label">Teléfono</label>
+                                <input type="tel" class="form-control" id="customerPhone">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="customerEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="customerEmail">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="customerAddress" class="form-label">Dirección</label>
+                            <textarea class="form-control" id="customerAddress" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveCustomer()">Guardar Cliente</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para historial de compras -->
+    <div class="modal fade" id="purchaseHistoryModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Historial de Compras</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="purchaseHistoryContainer">
+                        <!-- El historial se carga dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentUser = null;
+        let customers = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadCustomers();
+        });
+
+        function checkAuth() {
+            const user = localStorage.getItem('user');
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            currentUser = JSON.parse(user);
+            document.getElementById('userInfo').textContent = `Bienvenido, ${currentUser.nombre}`;
+            document.getElementById('userRole').textContent = currentUser.tipo;
+            loadMenu();
+        }
+
+        <!-- En la función loadMenu() del script -->
+        function loadMenu() {
+            const menu = document.getElementById('mainMenu');
+            let menuItems = '';
+
+            if (currentUser.tipo === 'admin') {
+                menuItems = `
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">
+                            <i class="fas fa-tachometer-alt"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="products.html">
+                            <i class="fas fa-box"></i>Productos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="categories.html">
+                            <i class="fas fa-tags"></i>Categorías
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="suppliers.html">
+                            <i class="fas fa-truck"></i>Proveedores
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="customers.html">
+                            <i class="fas fa-users"></i>Clientes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="sales.html">
+                            <i class="fas fa-shopping-cart"></i>Ventas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="inventory.html">
+                            <i class="fas fa-warehouse"></i>Inventario
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="users.html">
+                            <i class="fas fa-user-cog"></i>Usuarios
+                        </a>
+                    </li>
+                `;
+            } else {
+                menuItems = `
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">
+                            <i class="fas fa-tachometer-alt"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="products.html">
+                            <i class="fas fa-box"></i>Productos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="customers.html">
+                            <i class="fas fa-users"></i>Clientes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="sales.html">
+                            <i class="fas fa-shopping-cart"></i>Ventas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="inventory.html">
+                            <i class="fas fa-warehouse"></i>Inventario
+                        </a>
+                    </li>
+                `;
+            }
+
+            menu.innerHTML = menuItems;
+        }
+
+        async function loadCustomers() {
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'getCustomers'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    customers = result.data;
+                    renderCustomers();
+                }
+            } catch (error) {
+                console.error('Error loading customers:', error);
+            }
+        }
+
+        function renderCustomers() {
+            const container = document.getElementById('customersContainer');
+            container.innerHTML = '';
+
+            customers.forEach(customer => {
+                const card = `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card customer-card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">${customer.nombre}</h5>
+                                
+                                <div class="mb-3">
+                                    ${customer.telefono ? `
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="fas fa-phone me-2 text-muted"></i>
+                                            <span>${customer.telefono}</span>
+                                        </div>
+                                    ` : ''}
+                                    
+                                    ${customer.email ? `
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="fas fa-envelope me-2 text-muted"></i>
+                                            <span>${customer.email}</span>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                
+                                ${customer.direccion ? `
+                                    <p class="card-text">
+                                        <small class="text-muted">
+                                            <i class="fas fa-map-marker-alt me-1"></i>
+                                            ${customer.direccion}
+                                        </small>
+                                    </p>
+                                ` : ''}
+                                
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <span class="badge bg-success">${customer.total_compras || 0} compras</span>
+                                        <span class="badge bg-primary ms-1">$${parseFloat(customer.total_gastado || 0).toFixed(2)}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between">
+                                    <button class="btn btn-sm btn-info" onclick="viewPurchaseHistory(${customer.id_cliente}, '${customer.nombre}')">
+                                        <i class="fas fa-history me-1"></i>Historial
+                                    </button>
+                                    <div>
+                                        <button class="btn btn-sm btn-warning me-1" onclick="editCustomer(${customer.id_cliente})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${customer.id_cliente})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <small class="text-muted d-block mt-2">
+                                    Registrado: ${new Date(customer.fecha_registro).toLocaleDateString()}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+
+        function showCustomerModal() {
+            document.getElementById('customerModalTitle').textContent = 'Nuevo Cliente';
+            document.getElementById('customerForm').reset();
+            document.getElementById('customerId').value = '';
+            const modal = new bootstrap.Modal(document.getElementById('customerModal'));
+            modal.show();
+        }
+
+        async function editCustomer(id) {
+            const customer = customers.find(cust => cust.id_cliente === id);
+            if (customer) {
+                document.getElementById('customerModalTitle').textContent = 'Editar Cliente';
+                document.getElementById('customerId').value = customer.id_cliente;
+                document.getElementById('customerName').value = customer.nombre;
+                document.getElementById('customerPhone').value = customer.telefono || '';
+                document.getElementById('customerEmail').value = customer.email || '';
+                document.getElementById('customerAddress').value = customer.direccion || '';
+                
+                const modal = new bootstrap.Modal(document.getElementById('customerModal'));
+                modal.show();
+            }
+        }
+
+        async function saveCustomer() {
+            const form = document.getElementById('customerForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const customerData = {
+                nombre: document.getElementById('customerName').value,
+                telefono: document.getElementById('customerPhone').value,
+                email: document.getElementById('customerEmail').value,
+                direccion: document.getElementById('customerAddress').value
+            };
+
+            const customerId = document.getElementById('customerId').value;
+            const action = customerId ? 'updateCustomer' : 'createCustomer';
+
+            if (customerId) {
+                customerData.id = customerId;
+            }
+
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: action,
+                        ...customerData
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Cliente guardado correctamente');
+                    bootstrap.Modal.getInstance(document.getElementById('customerModal')).hide();
+                    loadCustomers();
+                } else {
+                    alert('Error al guardar cliente: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error saving customer:', error);
+                alert('Error de conexión al guardar cliente');
+            }
+        }
+
+        async function deleteCustomer(id) {
+            if (!confirm('¿Estás seguro de que quieres eliminar este cliente?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'deleteCustomer',
+                        id: id
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Cliente eliminado correctamente');
+                    loadCustomers();
+                } else {
+                    alert('Error al eliminar cliente: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error deleting customer:', error);
+                alert('Error de conexión al eliminar cliente');
+            }
+        }
+        
+
+        async function viewPurchaseHistory(customerId, customerName) {
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'getPurchaseHistory',
+                        id_cliente: customerId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const purchases = result.data;
+                    let historyHTML = `
+                        <h6>Historial de compras: ${customerName}</h6>
+                    `;
+                    
+                    if (purchases.length > 0) {
+                        historyHTML += `
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Venta #</th>
+                                            <th>Fecha</th>
+                                            <th>Total</th>
+                                            <th>Método de Pago</th>
+                                            <th>Vendedor</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+                        
+                        purchases.forEach(purchase => {
+                            historyHTML += `
+                                <tr>
+                                    <td>${purchase.id_venta}</td>
+                                    <td>${new Date(purchase.fecha_venta).toLocaleDateString()}</td>
+                                    <td>$${parseFloat(purchase.total).toFixed(2)}</td>
+                                    <td>${purchase.metodo_pago}</td>
+                                    <td>${purchase.vendedor}</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        historyHTML += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                    } else {
+                        historyHTML += '<p class="text-muted">El cliente no tiene compras registradas.</p>';
+                    }
+                    
+                    document.getElementById('purchaseHistoryContainer').innerHTML = historyHTML;
+                    const modal = new bootstrap.Modal(document.getElementById('purchaseHistoryModal'));
+                    modal.show();
+                }
+            } catch (error) {
+                console.error('Error loading purchase history:', error);
+            }
+        }
+        // En tu archivo customers.html o JavaScript correspondiente
+
+// Función para eliminar cliente
+async function eliminarCliente(id, nombre) {
+    if (!confirm(`¿Estás seguro de que deseas eliminar al cliente: ${nombre}?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch('../api/index.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'deleteCustomer',
+                id: id
+            })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            mostrarMensaje(`Cliente "${nombre}" eliminado correctamente`, 'success');
+            // Recargar la lista de clientes
+            cargarClientes();
+        } else {
+            mostrarMensaje(result.message, 'danger');
+        }
+    } catch (error) {
+        console.error('Error al eliminar cliente:', error);
+        mostrarMensaje('Error de conexión al eliminar cliente', 'danger');
+    }
+}
+
+// Función para cargar clientes
+async function cargarClientes() {
+    try {
+        const response = await fetch('../api/index.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'getCustomers'
+            })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            actualizarTablaClientes(result.data);
+        } else {
+            mostrarMensaje('Error al cargar clientes: ' + result.message, 'danger');
+        }
+    } catch (error) {
+        console.error('Error al cargar clientes:', error);
+        mostrarMensaje('Error de conexión al cargar clientes', 'danger');
+    }
+}
+
+// Función para mostrar mensajes
+function mostrarMensaje(mensaje, tipo = 'info') {
+    // Implementa tu lógica para mostrar mensajes al usuario
+    const contenedor = document.getElementById('messageContainer');
+    if (contenedor) {
+        contenedor.innerHTML = `
+            <div class="alert alert-${tipo} alert-dismissible fade show">
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+    }
+}
+
+        // Filtro de búsqueda
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredCustomers = customers.filter(customer => 
+                customer.nombre.toLowerCase().includes(searchTerm) ||
+                (customer.email && customer.email.toLowerCase().includes(searchTerm)) ||
+                (customer.telefono && customer.telefono.includes(searchTerm))
+            );
+            
+            renderFilteredCustomers(filteredCustomers);
+        });
+
+        function renderFilteredCustomers(filteredCustomers) {
+            const container = document.getElementById('customersContainer');
+            container.innerHTML = '';
+
+            filteredCustomers.forEach(customer => {
+                const card = `
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card customer-card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">${customer.nombre}</h5>
+                                
+                                <div class="mb-3">
+                                    ${customer.telefono ? `
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="fas fa-phone me-2 text-muted"></i>
+                                            <span>${customer.telefono}</span>
+                                        </div>
+                                    ` : ''}
+                                    
+                                    ${customer.email ? `
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="fas fa-envelope me-2 text-muted"></i>
+                                            <span>${customer.email}</span>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                
+                                ${customer.direccion ? `
+                                    <p class="card-text">
+                                        <small class="text-muted">
+                                            <i class="fas fa-map-marker-alt me-1"></i>
+                                            ${customer.direccion}
+                                        </small>
+                                    </p>
+                                ` : ''}
+                                
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <span class="badge bg-success">${customer.total_compras || 0} compras</span>
+                                        <span class="badge bg-primary ms-1">$${parseFloat(customer.total_gastado || 0).toFixed(2)}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex justify-content-between">
+                                    <button class="btn btn-sm btn-info" onclick="viewPurchaseHistory(${customer.id_cliente}, '${customer.nombre}')">
+                                        <i class="fas fa-history me-1"></i>Historial
+                                    </button>
+                                    <div>
+                                        <button class="btn btn-sm btn-warning me-1" onclick="editCustomer(${customer.id_cliente})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteCustomer(${customer.id_cliente})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <small class="text-muted d-block mt-2">
+                                    Registrado: ${new Date(customer.fecha_registro).toLocaleDateString()}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+
+        function logout() {
+            if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+                localStorage.removeItem('user');
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+</html>

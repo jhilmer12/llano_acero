@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ventas - Ferretería</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: #2c3e50;
+        }
+        .sidebar .nav-link {
+            color: #ecf0f1;
+            padding: 15px 20px;
+            border-left: 4px solid transparent;
+        }
+        .sidebar .nav-link:hover {
+            background: #34495e;
+            border-left: 4px solid #3498db;
+        }
+        .sidebar .nav-link.active {
+            background: #34495e;
+            border-left: 4px solid #3498db;
+        }
+        .sale-item {
+            border-left: 4px solid #007bff;
+        }
+        .product-card {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .selected-product {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar p-0">
+                <div class="position-sticky pt-3">
+                    <div class="text-center p-3 border-bottom">
+                        <i class="fas fa-tools fa-2x text-white mb-2"></i>
+                        <h5 class="text-white mb-0">Ferretería</h5>
+                        <small class="text-muted" id="userRole"></small>
+                    </div>
+                    <ul class="nav flex-column mt-3" id="mainMenu">
+                        <!-- Menú se carga dinámicamente -->
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4" style="background: #f8f9fa; min-height: 100vh;">
+                <!-- Navbar -->
+                <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+                    <div class="container-fluid">
+                        <button class="btn btn-link d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        
+                        <div class="d-flex align-items-center">
+                            <span class="navbar-text me-3" id="userInfo"></span>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                                    <i class="fas fa-user me-2"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Content -->
+                <div class="container-fluid mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2><i class="fas fa-shopping-cart me-2"></i>Gestión de Ventas</h2>
+                        <div>
+                            <button class="btn btn-primary me-2" onclick="showNewSaleModal()">
+                                <i class="fas fa-plus me-2"></i>Nueva Venta
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="loadSales()">
+                                <i class="fas fa-sync-alt me-2"></i>Actualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Estadísticas Rápidas -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h4 id="todaySalesCount">0</h4>
+                                            <span>Ventas Hoy</span>
+                                        </div>
+                                        <i class="fas fa-shopping-cart fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h4 id="todayRevenue">$0</h4>
+                                            <span>Ingresos Hoy</span>
+                                        </div>
+                                        <i class="fas fa-dollar-sign fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Ventas -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Historial de Ventas</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>ID Venta</th>
+                                            <th>Fecha</th>
+                                            <th>Cliente</th>
+                                            <th>Total</th>
+                                            <th>Método Pago</th>
+                                            <th>Vendedor</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="salesTableBody">
+                                        <!-- Las ventas se cargan dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal para Nueva Venta -->
+    <div class="modal fade" id="newSaleModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Venta</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Selección de Productos -->
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Productos Disponibles</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <input type="text" class="form-control" placeholder="Buscar productos..." id="productSearch">
+                                    </div>
+                                    <div style="max-height: 400px; overflow-y: auto;" id="productsList">
+                                        <!-- Productos se cargan dinámicamente -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Carrito de Compra -->
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Detalles de la Venta</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form id="saleForm">
+                                        <div class="mb-3">
+                                            <label for="saleCustomer" class="form-label">Cliente (Opcional)</label>
+                                            <select class="form-select" id="saleCustomer">
+                                                <option value="">Cliente General</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="salePaymentMethod" class="form-label">Método de Pago *</label>
+                                            <select class="form-select" id="salePaymentMethod" required>
+                                                <option value="">Seleccionar método</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <h6>Productos Seleccionados</h6>
+                                        <div style="max-height: 200px; overflow-y: auto;" id="saleItems">
+                                            <!-- Items se cargan dinámicamente -->
+                                        </div>
+                                        
+                                        <div class="mt-3 p-3 bg-light rounded">
+                                            <div class="d-flex justify-content-between">
+                                                <strong>Total:</strong>
+                                                <strong id="saleTotal">$0.00</strong>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn btn-success w-100" onclick="processSale()">
+                                        <i class="fas fa-check me-2"></i>Procesar Venta
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Detalles de Venta -->
+    <div class="modal fade" id="saleDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalles de Venta #<span id="saleDetailsId"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="saleDetailsContent">
+                        <!-- Los detalles se cargan dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentUser = null;
+        let sales = [];
+        let products = [];
+        let customers = [];
+        let paymentMethods = [];
+        let saleItems = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadSales();
+            loadSalesStats();
+        });
+
+        function checkAuth() {
+            const user = localStorage.getItem('user');
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            currentUser = JSON.parse(user);
+            document.getElementById('userInfo').textContent = `Bienvenido, ${currentUser.nombre}`;
+            document.getElementById('userRole').textContent = currentUser.tipo;
+            loadMenu();
+        }
+
+
+        function loadMenu() {
+            const menu = document.getElementById('mainMenu');
+            let menuItems = '';
+
+            if (currentUser.tipo === 'admin') {
+                menuItems = `
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">
+                            <i class="fas fa-tachometer-alt"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="products.html">
+                            <i class="fas fa-box"></i>Productos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="categories.html">
+                            <i class="fas fa-tags"></i>Categorías
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="suppliers.html">
+                            <i class="fas fa-truck"></i>Proveedores
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="customers.html">
+                            <i class="fas fa-users"></i>Clientes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="sales.html">
+                            <i class="fas fa-shopping-cart"></i>Ventas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="inventory.html">
+                            <i class="fas fa-warehouse"></i>Inventario
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="users.html">
+                            <i class="fas fa-user-cog"></i>Usuarios
+                        </a>
+                    </li>
+                `;
+            } else {
+                menuItems = `
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">
+                            <i class="fas fa-tachometer-alt"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="products.html">
+                            <i class="fas fa-box"></i>Productos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="customers.html">
+                            <i class="fas fa-users"></i>Clientes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="sales.html">
+                            <i class="fas fa-shopping-cart"></i>Ventas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="inventory.html">
+                            <i class="fas fa-warehouse"></i>Inventario
+                        </a>
+                    </li>
+                `;
+            }
+
+            menu.innerHTML = menuItems;
+        }
+
+        async function loadSales() {
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'getSales'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    sales = result.data;
+                    renderSales();
+                }
+            } catch (error) {
+                console.error('Error loading sales:', error);
+            }
+        }
+
+        async function loadSalesStats() {
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'getSalesStatistics'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const stats = result.data;
+                    document.getElementById('todaySalesCount').textContent = stats.total_ventas || 0;
+                    document.getElementById('todayRevenue').textContent = `$${parseFloat(stats.ingresos_totales || 0).toFixed(2)}`;
+                }
+            } catch (error) {
+                console.error('Error loading sales stats:', error);
+            }
+        }
+
+        function renderSales() {
+            const tbody = document.getElementById('salesTableBody');
+            tbody.innerHTML = '';
+
+            sales.forEach(sale => {
+                const actions = `
+                    <button class="btn btn-sm btn-info me-1" onclick="viewSaleDetails(${sale.id_venta})">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    ${currentUser.tipo === 'admin' ? `
+                        <button class="btn btn-sm btn-danger" onclick="cancelSale(${sale.id_venta})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    ` : ''}
+                `;
+
+                const row = `
+                    <tr>
+                        <td>#${sale.id_venta}</td>
+                        <td>${new Date(sale.fecha_venta).toLocaleString()}</td>
+                        <td>${sale.cliente || 'Cliente General'}</td>
+                        <td><strong>$${parseFloat(sale.total).toFixed(2)}</strong></td>
+                        <td><span class="badge bg-secondary">${sale.metodo_pago}</span></td>
+                        <td>${sale.vendedor}</td>
+                        <td>${actions}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        async function showNewSaleModal() {
+            await loadProductsForSale();
+            await loadCustomersForSale();
+            await loadPaymentMethods();
+            saleItems = [];
+            updateSaleItems();
+            updateSaleTotal();
+            
+            const modal = new bootstrap.Modal(document.getElementById('newSaleModal'));
+            modal.show();
+        }
+
+        async function loadProductsForSale() {
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'getProducts'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    products = result.data.filter(p => p.stock > 0);
+                    renderProductsForSale();
+                }
+            } catch (error) {
+                console.error('Error loading products for sale:', error);
+            }
+        }
+
+        function renderProductsForSale() {
+            const container = document.getElementById('productsList');
+            container.innerHTML = '';
+
+            products.forEach(product => {
+                const productCard = `
+                    <div class="card product-card mb-2" onclick="addToSale(${product.id_producto})">
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">${product.nombre}</h6>
+                                    <small class="text-muted">Stock: ${product.stock} | $${parseFloat(product.precio).toFixed(2)}</small>
+                                </div>
+                                <i class="fas fa-plus text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += productCard;
+            });
+        }
+
+        async function loadCustomersForSale() {
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'getCustomers'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    customers = result.data;
+                    const select = document.getElementById('saleCustomer');
+                    select.innerHTML = '<option value="">Cliente General</option>';
+                    customers.forEach(customer => {
+                        const option = document.createElement('option');
+                        option.value = customer.id_cliente;
+                        option.textContent = customer.nombre;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading customers for sale:', error);
+            }
+        }
+
+        async function loadPaymentMethods() {
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'getPaymentMethods'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    paymentMethods = result.data;
+                    const select = document.getElementById('salePaymentMethod');
+                    select.innerHTML = '<option value="">Seleccionar método</option>';
+                    paymentMethods.forEach(method => {
+                        const option = document.createElement('option');
+                        option.value = method.id_metodo_pago;
+                        option.textContent = method.nombre;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading payment methods:', error);
+            }
+        }
+
+        function addToSale(productId) {
+            const product = products.find(p => p.id_producto === productId);
+            if (!product) return;
+
+            const existingItem = saleItems.find(item => item.id_producto === productId);
+            if (existingItem) {
+                if (existingItem.cantidad < product.stock) {
+                    existingItem.cantidad++;
+                    existingItem.subtotal = existingItem.cantidad * existingItem.precio_unitario;
+                } else {
+                    alert('No hay suficiente stock disponible');
+                    return;
+                }
+            } else {
+                saleItems.push({
+                    id_producto: product.id_producto,
+                    nombre: product.nombre,
+                    precio_unitario: parseFloat(product.precio),
+                    cantidad: 1,
+                    subtotal: parseFloat(product.precio)
+                });
+            }
+
+            updateSaleItems();
+            updateSaleTotal();
+        }
+
+        function removeFromSale(index) {
+            saleItems.splice(index, 1);
+            updateSaleItems();
+            updateSaleTotal();
+        }
+
+        function updateQuantity(index, change) {
+            const item = saleItems[index];
+            const product = products.find(p => p.id_producto === item.id_producto);
+            
+            const newQuantity = item.cantidad + change;
+            if (newQuantity < 1) return;
+            if (newQuantity > product.stock) {
+                alert('No hay suficiente stock disponible');
+                return;
+            }
+
+            item.cantidad = newQuantity;
+            item.subtotal = item.cantidad * item.precio_unitario;
+            updateSaleItems();
+            updateSaleTotal();
+        }
+
+        function updateSaleItems() {
+            const container = document.getElementById('saleItems');
+            container.innerHTML = '';
+
+            if (saleItems.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center">No hay productos seleccionados</p>';
+                return;
+            }
+
+            saleItems.forEach((item, index) => {
+                const itemHTML = `
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                        <div>
+                            <h6 class="mb-1">${item.nombre}</h6>
+                            <small class="text-muted">$${item.precio_unitario.toFixed(2)} c/u</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <div class="btn-group btn-group-sm me-2">
+                                <button class="btn btn-outline-secondary" onclick="updateQuantity(${index}, -1)">-</button>
+                                <span class="btn btn-outline-secondary disabled">${item.cantidad}</span>
+                                <button class="btn btn-outline-secondary" onclick="updateQuantity(${index}, 1)">+</button>
+                            </div>
+                            <span class="me-2">$${item.subtotal.toFixed(2)}</span>
+                            <button class="btn btn-sm btn-outline-danger" onclick="removeFromSale(${index})">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += itemHTML;
+            });
+        }
+
+        function updateSaleTotal() {
+            const total = saleItems.reduce((sum, item) => sum + item.subtotal, 0);
+            document.getElementById('saleTotal').textContent = `$${total.toFixed(2)}`;
+        }
+
+        async function processSale() {
+            const paymentMethod = document.getElementById('salePaymentMethod').value;
+            const customer = document.getElementById('saleCustomer').value;
+
+            if (!paymentMethod) {
+                alert('Por favor selecciona un método de pago');
+                return;
+            }
+
+            if (saleItems.length === 0) {
+                alert('Por favor agrega productos a la venta');
+                return;
+            }
+
+            const saleData = {
+                total: saleItems.reduce((sum, item) => sum + item.subtotal, 0),
+                id_cliente: customer || null,
+                id_metodo_pago: parseInt(paymentMethod)
+            };
+
+            const details = saleItems.map(item => ({
+                id_producto: item.id_producto,
+                cantidad: item.cantidad,
+                precio_unitario: item.precio_unitario,
+                subtotal: item.subtotal
+            }));
+
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        action: 'createSale',
+                        sale_data: saleData,
+                        details: details
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ Venta procesada correctamente. ID: ${result.id_venta}`);
+                    bootstrap.Modal.getInstance(document.getElementById('newSaleModal')).hide();
+                    loadSales();
+                    loadSalesStats();
+                    
+                    // Limpiar carrito
+                    saleItems = [];
+                    updateSaleItems();
+                    updateSaleTotal();
+                } else {
+                    // ✅ MEJOR MANEJO DE ERRORES DE TRIGGERS
+                    if (result.message.includes('Stock insuficiente')) {
+                        alert('❌ ' + result.message);
+                    } else if (result.message.includes('stock no puede ser negativo')) {
+                        alert('❌ Error de inventario: ' + result.message);
+                    } else {
+                        alert('❌ Error al procesar la venta: ' + result.message);
+                    }
+                }
+            } catch (error) {
+                console.error('Error processing sale:', error);
+                alert('❌ Error de conexión al procesar la venta');
+            }
+        }
+
+        async function viewSaleDetails(saleId) {
+            try {
+                console.log('🔍 Cargando detalles de venta ID:', saleId);
+                
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'getSale',
+                        id: saleId
+                    })
+                });
+                
+                console.log('📡 Estado de respuesta:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('📊 Resultado:', result);
+                
+                if (result.success) {
+                    const sale = result.data;
+                    console.log('🛒 Venta encontrada:', sale);
+                    
+                    document.getElementById('saleDetailsId').textContent = sale.id_venta;
+                    
+                    let detailsHTML = `
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Fecha:</strong> ${new Date(sale.fecha_venta).toLocaleString()}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Cliente:</strong> ${sale.cliente || 'Cliente General'}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Método de Pago:</strong> ${sale.metodo_pago || 'No especificado'}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Vendedor:</strong> ${sale.vendedor || 'No especificado'}
+                            </div>
+                        </div>
+                        
+                        <h6>Productos Vendidos:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th class="text-center">Cantidad</th>
+                                        <th class="text-end">Precio Unitario</th>
+                                        <th class="text-end">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    // Verificar que existan detalles
+                    if (sale.detalles && sale.detalles.length > 0) {
+                        console.log('📦 Productos encontrados:', sale.detalles.length);
+                        sale.detalles.forEach(detail => {
+                            detailsHTML += `
+                                <tr>
+                                    <td>
+                                        <strong>${detail.producto || 'Producto no encontrado'}</strong>
+                                        ${detail.descripcion ? `<br><small class="text-muted">${detail.descripcion}</small>` : ''}
+                                    </td>
+                                    <td class="text-center">${detail.cantidad || 0}</td>
+                                    <td class="text-end">$${parseFloat(detail.precio_unitario || 0).toFixed(2)}</td>
+                                    <td class="text-end">$${parseFloat(detail.subtotal || 0).toFixed(2)}</td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        console.log('❌ No se encontraron productos');
+                        detailsHTML += `
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">
+                                    No se encontraron productos en esta venta
+                                </td>
+                            </tr>
+                        `;
+                    }
+                    
+                    detailsHTML += `
+                                </tbody>
+                                <tfoot class="table-group-divider">
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                        <td class="text-end"><strong>$${parseFloat(sale.total || 0).toFixed(2)}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        
+                        <div class="mt-3 p-3 bg-light rounded">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>ID Venta:</strong> ${sale.id_venta}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Total de Productos:</strong> ${sale.detalles ? sale.detalles.length : 0}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('saleDetailsContent').innerHTML = detailsHTML;
+                    const modal = new bootstrap.Modal(document.getElementById('saleDetailsModal'));
+                    modal.show();
+                } else {
+                    console.error('❌ Error en la respuesta:', result.message);
+                    alert('Error al cargar los detalles de la venta: ' + (result.message || 'Error desconocido'));
+                }
+            } catch (error) {
+                console.error('💥 Error loading sale details:', error);
+                alert('Error de conexión al cargar los detalles de la venta: ' + error.message);
+            }
+        }
+
+        async function cancelSale(saleId) {
+            if (!confirm('¿Estás seguro de que quieres anular esta venta? Esta acción no se puede deshacer.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'cancelSale',
+                        id: saleId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Venta anulada correctamente');
+                    loadSales();
+                    loadSalesStats();
+                } else {
+                    alert('Error al anular la venta: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error canceling sale:', error);
+                alert('Error de conexión al anular la venta');
+            }
+        }
+
+        // Búsqueda de productos en modal de venta
+        document.getElementById('productSearch').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredProducts = products.filter(product => 
+                product.nombre.toLowerCase().includes(searchTerm) ||
+                (product.descripcion && product.descripcion.toLowerCase().includes(searchTerm))
+            );
+            renderFilteredProductsForSale(filteredProducts);
+        });
+
+        function renderFilteredProductsForSale(filteredProducts) {
+            const container = document.getElementById('productsList');
+            container.innerHTML = '';
+
+            filteredProducts.forEach(product => {
+                const productCard = `
+                    <div class="card product-card mb-2" onclick="addToSale(${product.id_producto})">
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">${product.nombre}</h6>
+                                    <small class="text-muted">Stock: ${product.stock} | $${parseFloat(product.precio).toFixed(2)}</small>
+                                </div>
+                                <i class="fas fa-plus text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += productCard;
+            });
+        }
+
+        function logout() {
+            if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+                localStorage.removeItem('user');
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+</html>

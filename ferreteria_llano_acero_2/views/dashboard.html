@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Ferretería</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: #2c3e50;
+            transition: all 0.3s;
+        }
+        .sidebar .nav-link {
+            color: #ecf0f1;
+            padding: 15px 20px;
+            border-left: 4px solid transparent;
+        }
+        .sidebar .nav-link:hover {
+            background: #34495e;
+            border-left: 4px solid #3498db;
+        }
+        .sidebar .nav-link.active {
+            background: #34495e;
+            border-left: 4px solid #3498db;
+        }
+        .sidebar .nav-link i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        .content-area {
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        .stat-card {
+            border-radius: 10px;
+            border: none;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .alert-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+        }
+        .facial-card {
+            border-left: 4px solid #17a2b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar p-0">
+                <div class="position-sticky pt-3">
+                    <div class="text-center p-3 border-bottom">
+                        <i class="fas fa-tools fa-2x text-white mb-2"></i>
+                        <h5 class="text-white mb-0">Ferretería</h5>
+                        <small class="text-muted" id="userRole"></small>
+                    </div>
+                    
+                    <ul class="nav flex-column mt-3" id="mainMenu">
+                        <!-- Menú se carga dinámicamente -->
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 content-area">
+                <!-- Navbar -->
+                <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+                    <div class="container-fluid">
+                        <button class="btn btn-link d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        
+                        <div class="d-flex align-items-center">
+                            <span class="navbar-text me-3" id="userInfo"></span>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                                    <i class="fas fa-user me-2"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Content -->
+                <div class="container-fluid mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h2>
+                        <span class="text-muted" id="currentDate"></span>
+                    </div>
+
+                    <!-- Estadísticas Generales -->
+                    <div class="row mb-4" id="statsContainer">
+                        <!-- Las estadísticas se cargan dinámicamente -->
+                    </div>
+
+                    <!-- SECCIÓN: REGISTRO FACIAL (SOLO PARA EMPLEADOS) -->
+                    <div class="row mb-4" id="facialRegistrationSection">
+                        <div class="col-12">
+                            <div class="card facial-card">
+                                <div class="card-header bg-info text-white">
+                                    <h5 class="mb-0"><i class="fas fa-user-circle me-2"></i>Registro de Reconocimiento Facial</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <h6 id="facialStatusTitle">Estado de su registro facial</h6>
+                                            <p class="mb-2" id="facialStatusText">Cargando información...</p>
+                                            <div id="facialStatusDetails"></div>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <button class="btn btn-success me-2" onclick="showFaceRegistration()" id="registerFaceBtn">
+                                                <i class="fas fa-camera me-2"></i>Registrar Mi Rostro
+                                            </button>
+                                            <button class="btn btn-outline-info" onclick="checkFaceStatus()" id="refreshFaceBtn">
+                                                <i class="fas fa-sync-alt me-2"></i>Actualizar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alertas y Notificaciones -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card stat-card border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Alertas del Sistema</h5>
+                                </div>
+                                <div class="card-body" id="alertsContainer">
+                                    <!-- Alertas se cargan dinámicamente -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos y Tablas -->
+                    <div class="row">
+                        <!-- Ventas Recientes -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card stat-card h-100">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fas fa-shopping-cart me-2"></i>Ventas Recientes</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="recentSalesContainer">
+                                        <!-- Ventas recientes se cargan dinámicamente -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Productos con Stock Bajo -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="card stat-card h-100">
+                                <div class="card-header">
+                                    <h5 class="mb-0"><i class="fas fa-box me-2"></i>Productos con Stock Bajo</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="lowStockContainer">
+                                        <!-- Productos con stock bajo se cargan dinámicamente -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal para Registro Facial -->
+    <div class="modal fade" id="faceRegistrationModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title"><i class="fas fa-camera me-2"></i>Registro de Rostro</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="instruction-box p-3 bg-light rounded mb-3">
+                                <h6><i class="fas fa-info-circle me-2"></i>Instrucciones:</h6>
+                                <ul class="small">
+                                    <li>Busque un lugar con buena iluminación</li>
+                                    <li>Mire directamente a la cámara</li>
+                                    <li>Mantenga una expresión neutral</li>
+                                    <li>Asegúrese de que su rostro esté completamente visible</li>
+                                    <li>Evite usar gorras o gafas oscuras</li>
+                                </ul>
+                            </div>
+                            <div class="text-center">
+                                <video id="registrationVideo" width="100%" autoplay playsinline style="border-radius: 10px; background: #f8f9fa;"></video>
+                                <canvas id="registrationCanvas" style="display: none;"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div id="registrationPreview" class="text-center">
+                                <p class="text-muted">Su foto aparecerá aquí después de la captura</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="captureAndRegisterFace()" id="captureFaceBtn">
+                        <i class="fas fa-camera me-2"></i>Capturar y Registrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let currentUser = null;
+        let registrationStream = null;
+
+        // ========== FUNCIONES DE REGISTRO FACIAL ==========
+
+        async function checkFaceRegistrationStatus() {
+            if (currentUser.tipo !== 'empleado') return;
+
+            try {
+                const response = await fetch('./api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'checkFaceRegistration',
+                        user_id: currentUser.id_usuario
+                    })
+                });
+
+                const result = await response.json();
+                console.log("Estado registro facial:", result);
+
+                if (result.success) {
+                    if (result.has_registration) {
+                        document.getElementById('facialStatusTitle').innerHTML = '<i class="fas fa-check-circle text-success me-2"></i>Registro Facial Activo';
+                        document.getElementById('facialStatusText').textContent = 'Su rostro está registrado en el sistema.';
+                        document.getElementById('facialStatusDetails').innerHTML = `
+                            <div class="alert alert-success py-2">
+                                <small>
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Puede usar reconocimiento facial para acceder al sistema.
+                                </small>
+                            </div>
+                        `;
+                        document.getElementById('registerFaceBtn').textContent = 'Actualizar Registro';
+                    } else {
+                        document.getElementById('facialStatusTitle').innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-2"></i>Registro Facial Pendiente';
+                        document.getElementById('facialStatusText').textContent = 'Complete su registro facial para acceso rápido y seguro.';
+                        document.getElementById('facialStatusDetails').innerHTML = `
+                            <div class="alert alert-warning py-2">
+                                <small>
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Registre su rostro para acceder con reconocimiento facial.
+                                </small>
+                            </div>
+                        `;
+                        document.getElementById('registerFaceBtn').textContent = 'Registrar Mi Rostro';
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking face status:', error);
+                document.getElementById('facialStatusText').textContent = 'Error al verificar estado facial';
+            }
+        }
+
+        function showFaceRegistration() {
+            console.log("🔧 Mostrando modal de registro facial");
+            initRegistrationCamera();
+            const modal = new bootstrap.Modal(document.getElementById('faceRegistrationModal'));
+            modal.show();
+        }
+
+        async function initRegistrationCamera() {
+            try {
+                // Detener stream anterior si existe
+                if (registrationStream) {
+                    registrationStream.getTracks().forEach(track => track.stop());
+                }
+
+                console.log("📷 Iniciando cámara...");
+                registrationStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: 'user'
+                    },
+                    audio: false
+                });
+                
+                const video = document.getElementById('registrationVideo');
+                video.srcObject = registrationStream;
+                console.log("✅ Cámara iniciada correctamente");
+                
+            } catch (error) {
+                console.error('❌ Error accediendo a la cámara:', error);
+                document.getElementById('registrationPreview').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-camera-slash me-2"></i>
+                        Error al acceder a la cámara: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function captureAndRegisterFace() {
+            console.log("🎬 Iniciando registro facial...");
+            
+            const btn = document.getElementById('captureFaceBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>PROCESANDO...';
+
+            try {
+                // 1. Verificar que el servicio Python esté corriendo
+                console.log("🔍 Verificando servicio Python...");
+                const testResponse = await fetch('http://localhost:5000/test');
+                if (!testResponse.ok) {
+                    throw new Error('El servicio Python no responde. ¿Está corriendo?');
+                }
+                console.log("✅ Servicio Python verificado");
+
+                // 2. Capturar imagen
+                const video = document.getElementById('registrationVideo');
+                const canvas = document.getElementById('registrationCanvas');
+                const context = canvas.getContext('2d');
+
+                if (video.readyState !== 4) {
+                    throw new Error('La cámara no está lista. Espere un momento.');
+                }
+
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                const imageData = canvas.toDataURL('image/jpeg', 0.8);
+                console.log("📸 Imagen capturada");
+
+                // 3. Mostrar preview
+                document.getElementById('registrationPreview').innerHTML = `
+                    <img src="${imageData}" class="img-fluid rounded" style="max-height: 200px;">
+                    <p class="mt-2 text-warning">
+                        <i class="fas fa-sync-alt fa-spin me-1"></i>
+                        Enviando a servicio Python...
+                    </p>
+                `;
+
+                // 4. Enviar a Python
+                console.log("📤 Enviando imagen a Python...");
+                const response = await fetch('http://localhost:5000/register_face', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: currentUser.id_usuario,
+                        image: imageData
+                    })
+                });
+
+                console.log("📥 Respuesta HTTP:", response.status);
+
+                if (!response.ok) {
+                    throw new Error(`Error del servidor Python: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log("📊 Resultado Python:", result);
+
+                if (result.success) {
+                    document.getElementById('registrationPreview').innerHTML = `
+                        <img src="${imageData}" class="img-fluid rounded" style="max-height: 200px;">
+                        <div class="alert alert-success mt-3">
+                            <h6><i class="fas fa-check-circle me-2"></i>¡ÉXITO!</h6>
+                            <strong>${result.message}</strong>
+                            <hr>
+                            <small class="text-muted">
+                                Usuario: ${result.user_id}<br>
+                                Archivo: ${result.file}<br>
+                                Hora: ${new Date().toLocaleString()}
+                            </small>
+                        </div>
+                    `;
+                    
+                    // Actualizar base de datos
+                    await updateFaceRegistrationInDB();
+                    
+                    // Cerrar modal después de 3 segundos
+                    setTimeout(() => {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('faceRegistrationModal'));
+                        if (modal) modal.hide();
+                        checkFaceRegistrationStatus();
+                    }, 3000);
+                    
+                } else {
+                    throw new Error(result.message);
+                }
+
+            } catch (error) {
+                console.error("💥 ERROR en registro facial:", error);
+                
+                let errorMessage = 'Error en el registro facial';
+                
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    errorMessage = `
+                        ❌ El servicio Python no está disponible.<br>
+                        <strong>Solución:</strong><br>
+                        1. Ejecuta el archivo "ejecutar_python.bat"<br>
+                        2. Mantén la ventana negra abierta<br>
+                        3. Verifica que http://localhost:5000/test funcione
+                    `;
+                } else if (error.message.includes('cámara')) {
+                    errorMessage = '❌ Error con la cámara: ' + error.message;
+                } else {
+                    errorMessage = '❌ ' + error.message;
+                }
+
+                document.getElementById('registrationPreview').innerHTML = `
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Error de Python</h6>
+                        ${errorMessage}
+                    </div>
+                `;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-camera me-2"></i>Capturar y Registrar';
+            }
+        }
+
+        // Función para actualizar la base de datos
+        async function updateFaceRegistrationInDB() {
+            try {
+                const response = await fetch('./api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'updateFaceRegistration',
+                        user_id: currentUser.id_usuario
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    console.log("✅ Base de datos actualizada");
+                } else {
+                    console.warn("⚠️ Error actualizando BD:", result.message);
+                }
+            } catch (error) {
+                console.warn("⚠️ Error actualizando BD:", error);
+            }
+        }
+
+        function checkFaceStatus() {
+            const btn = document.getElementById('refreshFaceBtn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>';
+            checkFaceRegistrationStatus();
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Actualizar';
+            }, 1000);
+        }
+
+        // Limpiar stream al cerrar el modal
+        document.getElementById('faceRegistrationModal').addEventListener('hidden.bs.modal', function () {
+            if (registrationStream) {
+                registrationStream.getTracks().forEach(track => track.stop());
+                registrationStream = null;
+                console.log("📷 Cámara liberada");
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadDashboard();
+            setCurrentDate();
+            checkFaceRegistrationStatus();
+        });
+
+        function checkAuth() {
+            const user = localStorage.getItem('user');
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            currentUser = JSON.parse(user);
+            document.getElementById('userInfo').textContent = 
+                `Bienvenido, ${currentUser.nombre}`;
+            document.getElementById('userRole').textContent = currentUser.tipo;
+            loadMenu();
+            setupRoleBasedSections();
+        }
+
+        function setupRoleBasedSections() {
+            const isAdmin = currentUser.tipo === 'admin';
+            const isEmployee = currentUser.tipo === 'empleado';
+
+            // Mostrar/ocultar sección de registro facial (solo empleados)
+            if (isEmployee) {
+                document.getElementById('facialRegistrationSection').style.display = 'block';
+            } else {
+                document.getElementById('facialRegistrationSection').style.display = 'none';
+            }
+        }
+
+        function setCurrentDate() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('es-ES', options);
+        }
+
+        function loadMenu() {
+            const menu = document.getElementById('mainMenu');
+            let menuItems = '';
+
+            if (currentUser.tipo === 'admin') {
+                menuItems = `
+                    <li class="nav-item">
+                        <a class="nav-link active" href="dashboard.html">
+                            <i class="fas fa-tachometer-alt"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="products.html">
+                            <i class="fas fa-box"></i>Productos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="categories.html">
+                            <i class="fas fa-tags"></i>Categorías
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="suppliers.html">
+                            <i class="fas fa-truck"></i>Proveedores
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="customers.html">
+                            <i class="fas fa-users"></i>Clientes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="sales.html">
+                            <i class="fas fa-shopping-cart"></i>Ventas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="inventory.html">
+                            <i class="fas fa-warehouse"></i>Inventario
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="users.html">
+                            <i class="fas fa-user-cog"></i>Usuarios
+                        </a>
+                    </li>
+                `;
+            } else {
+                menuItems = `
+                    <li class="nav-item">
+                        <a class="nav-link active" href="dashboard.html">
+                            <i class="fas fa-tachometer-alt"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="products.html">
+                            <i class="fas fa-box"></i>Productos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="customers.html">
+                            <i class="fas fa-users"></i>Clientes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="sales.html">
+                            <i class="fas fa-shopping-cart"></i>Ventas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="inventory.html">
+                            <i class="fas fa-warehouse"></i>Inventario
+                        </a>
+                    </li>
+                `;
+            }
+
+            menu.innerHTML = menuItems;
+        }
+
+        async function loadDashboard() {
+            await loadStats();
+            await loadAlerts();
+            await loadRecentSales();
+            await loadLowStockProducts();
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'getGeneralStats'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const stats = result.data;
+                    document.getElementById('statsContainer').innerHTML = `
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card stat-card border-primary">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title text-muted">Productos</h6>
+                                            <h3 class="text-primary">${stats.total_productos}</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-box fa-2x text-primary"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card stat-card border-success">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title text-muted">Ventas Hoy</h6>
+                                            <h3 class="text-success">${stats.ventas_hoy}</h3>
+                                            <small class="text-muted">$${parseFloat(stats.ingresos_hoy).toFixed(2)}</small>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-shopping-cart fa-2x text-success"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card stat-card border-info">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title text-muted">Clientes</h6>
+                                            <h3 class="text-info">${stats.total_clientes}</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-users fa-2x text-info"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card stat-card border-warning">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="card-title text-muted">Stock Bajo</h6>
+                                            <h3 class="text-warning">${stats.productos_bajo_stock}</h3>
+                                        </div>
+                                        <div class="align-self-center">
+                                            <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadAlerts() {
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'getAlerts'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const alerts = result.data;
+                    let alertsHTML = '';
+                    
+                    if (alerts.sin_stock.length > 0) {
+                        alertsHTML += `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-times-circle me-2"></i>
+                                <strong>${alerts.sin_stock.length} productos sin stock</strong>
+                            </div>
+                        `;
+                    }
+                    
+                    if (alerts.stock_bajo.length > 0) {
+                        alertsHTML += `
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>${alerts.stock_bajo.length} productos con stock bajo</strong>
+                            </div>
+                        `;
+                    }
+                    
+                    if (!alertsHTML) {
+                        alertsHTML = '<p class="text-muted mb-0">No hay alertas en este momento.</p>';
+                    }
+                    
+                    document.getElementById('alertsContainer').innerHTML = alertsHTML;
+                }
+            } catch (error) {
+                console.error('Error loading alerts:', error);
+            }
+        }
+
+        async function loadRecentSales() {
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'getSales',
+                        limit: 5
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const sales = result.data;
+                    let salesHTML = '';
+                    
+                    if (sales.length > 0) {
+                        sales.forEach(sale => {
+                            const date = new Date(sale.fecha_venta).toLocaleDateString();
+                            salesHTML += `
+                                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                                    <div>
+                                        <h6 class="mb-1">Venta #${sale.id_venta}</h6>
+                                        <small class="text-muted">${sale.cliente || 'Cliente general'} - ${date}</small>
+                                    </div>
+                                    <span class="badge bg-success">$${parseFloat(sale.total).toFixed(2)}</span>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        salesHTML = '<p class="text-muted text-center">No hay ventas recientes</p>';
+                    }
+                    
+                    document.getElementById('recentSalesContainer').innerHTML = salesHTML;
+                }
+            } catch (error) {
+                console.error('Error loading recent sales:', error);
+            }
+        }
+
+        async function loadLowStockProducts() {
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'getLowStockProducts'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const products = result.data;
+                    let productsHTML = '';
+                    
+                    if (products.length > 0) {
+                        products.forEach(product => {
+                            const alertClass = product.stock === 0 ? 'danger' : 'warning';
+                            productsHTML += `
+                                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                                    <div>
+                                        <h6 class="mb-1">${product.nombre}</h6>
+                                        <small class="text-muted">${product.categoria}</small>
+                                    </div>
+                                    <span class="badge bg-${alertClass}">${product.stock} unidades</span>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        productsHTML = '<p class="text-muted text-center">Todo el stock está en niveles normales</p>';
+                    }
+                    
+                    document.getElementById('lowStockContainer').innerHTML = productsHTML;
+                }
+            } catch (error) {
+                console.error('Error loading low stock products:', error);
+            }
+        }
+
+        function logout() {
+            if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+                localStorage.removeItem('user');
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+</html>

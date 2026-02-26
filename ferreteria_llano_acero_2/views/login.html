@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ferretería - Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 450px;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .logo i {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        .login-options {
+            border-top: 1px solid #dee2e6;
+            margin-top: 1rem;
+            padding-top: 1rem;
+        }
+        .option-card {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .option-card:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .option-card.selected {
+            border-color: #007bff;
+            background-color: #e7f3ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card p-4">
+        <div class="logo">
+            <i class="fas fa-tools"></i>
+            <h3 class="text-dark">Sistema Ferretería</h3>
+            <p class="text-muted">Seleccione su método de acceso</p>
+        </div>
+        
+        <!-- Opción 1: Login Tradicional -->
+        <div class="option-card" id="traditionalOption" onclick="selectOption('traditional')">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-key fa-2x text-primary me-3"></i>
+                <div>
+                    <h5 class="mb-1">Acceso con Credenciales</h5>
+                    <p class="mb-0 text-muted">Use su email y contraseña</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Opción 2: Login Facial -->
+        <div class="option-card" id="facialOption" onclick="selectOption('facial')">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-user-circle fa-2x text-success me-3"></i>
+                <div>
+                    <h5 class="mb-1">Reconocimiento Facial</h5>
+                    <p class="mb-0 text-muted">Acceso rápido y seguro</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formulario Tradicional -->
+        <form id="loginForm" style="display: none;">
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                    <input type="email" class="form-control" id="email" placeholder="tu@email.com" required>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="password" class="form-label">Contraseña</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                    <input type="password" class="form-control" id="password" placeholder="Tu contraseña" required>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100 py-2">
+                <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+            </button>
+            
+            <div class="text-center mt-2">
+                <a href="#" onclick="showOptions()">← Volver a opciones</a>
+            </div>
+        </form>
+
+        <!-- Verificación Facial -->
+        <div id="facialLogin" style="display: none;">
+            <div class="text-center mb-3">
+                <video id="video" width="100%" autoplay playsinline style="border-radius: 10px; background: #f8f9fa;"></video>
+                <canvas id="canvas" style="display: none;"></canvas>
+            </div>
+            
+            <div class="d-grid gap-2">
+                <button class="btn btn-success" onclick="startFacialLogin()" id="facialBtn">
+                    <i class="fas fa-camera me-2"></i>Iniciar Reconocimiento Facial
+                </button>
+                <button class="btn btn-outline-secondary" onclick="showOptions()">
+                    <i class="fas fa-arrow-left me-2"></i>Volver a opciones
+                </button>
+            </div>
+            
+            <div class="mt-3">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <small>¿No tienes registro facial? <a href="#" onclick="selectOption('traditional')">Usa tu email y contraseña</a></small>
+                </div>
+            </div>
+        </div>
+
+        <div id="loginMessage" class="mt-3"></div>
+    </div>
+    <!-- Agrega esto después del formulario de login -->
+
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let selectedOption = '';
+        let stream = null;
+
+        function selectOption(option) {
+            selectedOption = option;
+            
+            // Resetear todas las opciones
+            document.getElementById('traditionalOption').classList.remove('selected');
+            document.getElementById('facialOption').classList.remove('selected');
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('facialLogin').style.display = 'none';
+            
+            // Mostrar la opción seleccionada
+            if (option === 'traditional') {
+                document.getElementById('traditionalOption').classList.add('selected');
+                document.getElementById('loginForm').style.display = 'block';
+                stopCamera();
+            } else if (option === 'facial') {
+                document.getElementById('facialOption').classList.add('selected');
+                document.getElementById('facialLogin').style.display = 'block';
+                initCamera();
+            }
+        }
+
+        function showOptions() {
+            selectedOption = '';
+            document.getElementById('traditionalOption').classList.remove('selected');
+            document.getElementById('facialOption').classList.remove('selected');
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('facialLogin').style.display = 'none';
+            stopCamera();
+        }
+
+        async function initCamera() {
+            try {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        facingMode: 'user'
+                    },
+                    audio: false
+                });
+                
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+                
+            } catch (error) {
+                console.error('Error accessing camera:', error);
+                showMessage('❌ Error al acceder a la cámara', 'danger');
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        }
+
+        // Login Tradicional
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Iniciando...';
+            submitBtn.disabled = true;
+            
+            document.getElementById('loginMessage').innerHTML = '';
+            
+            const formData = {
+                action: 'login',
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value
+            };
+            
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    showMessage('✅ Login exitoso. Redirigiendo...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                } else {
+                    showMessage('❌ ' + result.message, 'danger');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('❌ Error de conexión', 'danger');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+async function startFacialLogin() {
+    console.log("🎬 Iniciando login facial...");
+    
+    const btn = document.getElementById('facialBtn');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Verificando...';
+
+    try {
+        // 1. Capturar imagen
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = canvas.toDataURL('image/jpeg', 0.8);
+        console.log("📸 Imagen capturada");
+
+        // 2. Enviar a /verify_face (NO /recognize_face)
+        console.log("📤 Enviando a /verify_face...");
+        const response = await fetch('http://localhost:5000/verify_face', {  // ✅ RUTA CORRECTA
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                image: imageData
+            })
+        });
+
+        console.log("📥 Respuesta recibida - Status:", response.status);
+
+        // Verificar el content-type
+        const contentType = response.headers.get('content-type');
+        console.log("🔍 Content-Type:", contentType);
+
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            throw new Error(`El servicio no devuelve JSON. Respuesta: ${text.substring(0, 100)}`);
+        }
+
+        const result = await response.json();
+        console.log("📊 Resultado:", result);
+
+        if (result.success && result.user_id) {
+            // Obtener datos del usuario desde PHP
+            const userResponse = await fetch('./api/index.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'getUser',
+                    id: result.user_id
+                })
+            });
+
+            const userResult = await userResponse.json();
+
+            if (userResult.success) {
+                localStorage.setItem('user', JSON.stringify(userResult.data));
+                showMessage('✅ ¡Rostro reconocido! Redirigiendo...', 'success');
+                
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+            } else {
+                throw new Error('Usuario no encontrado en la base de datos');
+            }
+        } else {
+            throw new Error(result.message || 'Rostro no reconocido');
+        }
+
+    } catch (error) {
+        console.error('💥 ERROR login facial:', error);
+        
+        let errorMessage = 'Error en el reconocimiento facial';
+        
+        if (error.message.includes('JSON')) {
+            errorMessage = '❌ El servicio facial no está respondiendo correctamente.';
+        } else if (error.message.includes('fetch')) {
+            errorMessage = '❌ No se puede conectar al servicio facial.';
+        } else {
+            errorMessage = '❌ ' + error.message;
+        }
+        
+        showMessage(errorMessage, 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+
+
+
+
+       
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('loginMessage');
+            messageDiv.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+
+        // Limpiar al salir
+        window.addEventListener('beforeunload', stopCamera);
+    </script>
+</body>
+</html>

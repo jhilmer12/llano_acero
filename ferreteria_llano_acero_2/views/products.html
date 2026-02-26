@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Productos - Ferretería</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            min-height: 100vh;
+            background: #2c3e50;
+        }
+        .sidebar .nav-link {
+            color: #ecf0f1;
+            padding: 15px 20px;
+            border-left: 4px solid transparent;
+        }
+        .sidebar .nav-link:hover {
+            background: #34495e;
+            border-left: 4px solid #3498db;
+        }
+        .sidebar .nav-link.active {
+            background: #34495e;
+            border-left: 4px solid #3498db;
+        }
+        .stock-low {
+            background-color: #fff3cd !important;
+        }
+        .stock-out {
+            background-color: #f8d7da !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar (igual que en dashboard) -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar p-0">
+                <div class="position-sticky pt-3">
+                    <div class="text-center p-3 border-bottom">
+                        <i class="fas fa-tools fa-2x text-white mb-2"></i>
+                        <h5 class="text-white mb-0">Ferretería</h5>
+                        <small class="text-muted" id="userRole"></small>
+                    </div>
+                    <ul class="nav flex-column mt-3" id="mainMenu">
+                        <!-- Menú se carga dinámicamente -->
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4" style="background: #f8f9fa; min-height: 100vh;">
+                <!-- Navbar -->
+                <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+                    <div class="container-fluid">
+                        <button class="btn btn-link d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        
+                        <div class="d-flex align-items-center">
+                            <span class="navbar-text me-3" id="userInfo"></span>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
+                                    <i class="fas fa-user me-2"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+
+                <!-- Content -->
+                <div class="container-fluid mt-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2><i class="fas fa-box me-2"></i>Gestión de Productos</h2>
+                        <button class="btn btn-primary" onclick="showProductModal()" id="addProductBtn" style="display: none;">
+                            <i class="fas fa-plus me-2"></i>Nuevo Producto
+                        </button>
+                    </div>
+
+                    <!-- Filtros -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                        <input type="text" class="form-control" placeholder="Buscar productos..." id="searchInput">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" id="categoryFilter">
+                                        <option value="">Todas las categorías</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" id="stockFilter">
+                                        <option value="">Todo el stock</option>
+                                        <option value="low">Stock Bajo</option>
+                                        <option value="out">Sin Stock</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Productos -->
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped" id="productsTable">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Nombre</th>
+                                            <th>Categoría</th>
+                                            <th>Precio</th>
+                                            <th>Stock</th>
+                                            <th>Proveedor</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="productsTableBody">
+                                        <!-- Los productos se cargan dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal para agregar/editar producto -->
+    <div class="modal fade" id="productModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalTitle">Nuevo Producto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="productForm">
+                        <input type="hidden" id="productId">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="productName" class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" id="productName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="productPrice" class="form-label">Precio *</label>
+                                <input type="number" class="form-control" id="productPrice" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="productCategory" class="form-label">Categoría *</label>
+                                <select class="form-select" id="productCategory" required>
+                                    <option value="">Seleccionar categoría</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="productSupplier" class="form-label">Proveedor *</label>
+                                <select class="form-select" id="productSupplier" required>
+                                    <option value="">Seleccionar proveedor</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="productStock" class="form-label">Stock Inicial</label>
+                                <input type="number" class="form-control" id="productStock" min="0" value="0" readonly>
+                                <div class="form-text">El stock solo se puede modificar desde el módulo de inventario.</div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="productDescription" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="productDescription" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveProduct()">Guardar Producto</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        let currentUser = null;
+        let products = [];
+        let categories = [];
+        let suppliers = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            loadProducts();
+            loadCategoriesForFilter();
+            loadCategoriesForForm();
+            loadSuppliers();
+        });
+
+        function checkAuth() {
+            const user = localStorage.getItem('user');
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            currentUser = JSON.parse(user);
+            document.getElementById('userInfo').textContent = `Bienvenido, ${currentUser.nombre}`;
+            document.getElementById('userRole').textContent = currentUser.tipo;
+            loadMenu();
+            
+            // Mostrar botón de agregar solo para admin
+            if (currentUser.tipo === 'admin') {
+                document.getElementById('addProductBtn').style.display = 'block';
+            }
+        }
+
+        function loadMenu() {
+            const menu = document.getElementById('mainMenu');
+            let menuItems = '';
+
+            if (currentUser.tipo === 'admin') {
+                menuItems = `
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">
+                            <i class="fas fa-tachometer-alt"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="products.html">
+                            <i class="fas fa-box"></i>Productos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="categories.html">
+                            <i class="fas fa-tags"></i>Categorías
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="suppliers.html">
+                            <i class="fas fa-truck"></i>Proveedores
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="customers.html">
+                            <i class="fas fa-users"></i>Clientes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="sales.html">
+                            <i class="fas fa-shopping-cart"></i>Ventas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="inventory.html">
+                            <i class="fas fa-warehouse"></i>Inventario
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="users.html">
+                            <i class="fas fa-user-cog"></i>Usuarios
+                        </a>
+                    </li>
+                `;
+            } else {
+                menuItems = `
+                    <li class="nav-item">
+                        <a class="nav-link" href="dashboard.html">
+                            <i class="fas fa-tachometer-alt"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="products.html">
+                            <i class="fas fa-box"></i>Productos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="customers.html">
+                            <i class="fas fa-users"></i>Clientes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="sales.html">
+                            <i class="fas fa-shopping-cart"></i>Ventas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="inventory.html">
+                            <i class="fas fa-warehouse"></i>Inventario
+                        </a>
+                    </li>
+                `;
+            }
+
+            menu.innerHTML = menuItems;
+        }
+
+        async function loadProducts() {
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'getProducts'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    products = result.data;
+                    renderProducts(products);
+                } else {
+                    alert('Error al cargar productos: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error loading products:', error);
+                alert('Error de conexión al cargar productos');
+            }
+        }
+
+        function renderProducts(productsToRender) {
+            const tbody = document.getElementById('productsTableBody');
+            tbody.innerHTML = '';
+
+            productsToRender.forEach(product => {
+                const stockClass = product.stock === 0 ? 'stock-out' : (product.stock <= 19 ? 'stock-low' : '');
+                const stockBadge = product.stock === 0 ? 
+                    '<span class="badge bg-danger">Sin Stock</span>' : 
+                    (product.stock <= 10 ? '<span class="badge bg-warning">Bajo</span>' : '<span class="badge bg-success">Normal</span>');
+
+                const actions = currentUser.tipo === 'admin' ? `
+                    <button class="btn btn-sm btn-warning me-1" onclick="editProduct(${product.id_producto})">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id_producto})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                ` : '<span class="text-muted">Solo lectura</span>';
+
+                const row = `
+                    <tr class="${stockClass}">
+                        <td>${product.id_producto}</td>
+                        <td>
+                            <strong>${product.nombre}</strong>
+                            ${product.descripcion ? '<br><small class="text-muted">' + product.descripcion + '</small>' : ''}
+                        </td>
+                        <td>${product.categoria}</td>
+                        <td>$${parseFloat(product.precio).toFixed(2)}</td>
+                        <td>
+                            ${product.stock} unidades
+                            ${stockBadge}
+                        </td>
+                        <td>${product.proveedor}</td>
+                        <td>${actions}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        async function loadCategoriesForFilter() {
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'getCategories'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const select = document.getElementById('categoryFilter');
+                    result.data.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.id_categoria;
+                        option.textContent = category.nombre;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        async function loadCategoriesForForm() {
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'getCategories'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const select = document.getElementById('productCategory');
+                    select.innerHTML = '<option value="">Seleccionar categoría</option>';
+                    result.data.forEach(category => {
+                        const option = document.createElement('option');
+                        option.value = category.id_categoria;
+                        option.textContent = category.nombre;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        async function loadSuppliers() {
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'getSuppliers'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const select = document.getElementById('productSupplier');
+                    select.innerHTML = '<option value="">Seleccionar proveedor</option>';
+                    result.data.forEach(supplier => {
+                        const option = document.createElement('option');
+                        option.value = supplier.id_proveedor;
+                        option.textContent = supplier.nombre;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading suppliers:', error);
+            }
+        }
+
+        function showProductModal() {
+            document.getElementById('productModalTitle').textContent = 'Nuevo Producto';
+            document.getElementById('productForm').reset();
+            document.getElementById('productId').value = '';
+            const modal = new bootstrap.Modal(document.getElementById('productModal'));
+            modal.show();
+        }
+
+        async function editProduct(id) {
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'getProduct',
+                        id: id
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const product = result.data;
+                    document.getElementById('productModalTitle').textContent = 'Editar Producto';
+                    document.getElementById('productId').value = product.id_producto;
+                    document.getElementById('productName').value = product.nombre;
+                    document.getElementById('productPrice').value = product.precio;
+                    document.getElementById('productCategory').value = product.id_categoria;
+                    document.getElementById('productSupplier').value = product.id_proveedor;
+                    document.getElementById('productStock').value = product.stock;
+                    document.getElementById('productDescription').value = product.descripcion || '';
+                    
+                    const modal = new bootstrap.Modal(document.getElementById('productModal'));
+                    modal.show();
+                }
+            } catch (error) {
+                console.error('Error loading product:', error);
+            }
+        }
+
+        async function saveProduct() {
+            const form = document.getElementById('productForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const productData = {
+                nombre: document.getElementById('productName').value,
+                precio: parseFloat(document.getElementById('productPrice').value),
+                id_categoria: parseInt(document.getElementById('productCategory').value),
+                id_proveedor: parseInt(document.getElementById('productSupplier').value),
+                descripcion: document.getElementById('productDescription').value
+            };
+
+            const productId = document.getElementById('productId').value;
+            const action = productId ? 'updateProduct' : 'createProduct';
+
+            if (productId) {
+                productData.id = productId;
+            }
+
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: action,
+                        ...productData
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Producto guardado correctamente');
+                    bootstrap.Modal.getInstance(document.getElementById('productModal')).hide();
+                    loadProducts();
+                } else {
+                    alert('Error al guardar producto: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error saving product:', error);
+                alert('Error de conexión al guardar producto');
+            }
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm('¿Estás seguro de que quieres eliminar este producto?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('../api/index.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + currentUser.id_usuario
+                    },
+                    body: JSON.stringify({
+                        action: 'deleteProduct',
+                        id: id
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Producto eliminado correctamente');
+                    loadProducts();
+                } else {
+                    alert('Error al eliminar producto: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error deleting product:', error);
+                alert('Error de conexión al eliminar producto');
+            }
+        }
+
+        // Filtros
+        document.getElementById('searchInput').addEventListener('input', filterProducts);
+        document.getElementById('categoryFilter').addEventListener('change', filterProducts);
+        document.getElementById('stockFilter').addEventListener('change', filterProducts);
+
+        function filterProducts() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const stockFilter = document.getElementById('stockFilter').value;
+
+            let filteredProducts = products.filter(product => {
+                const matchesSearch = product.nombre.toLowerCase().includes(searchTerm) ||
+                                    (product.descripcion && product.descripcion.toLowerCase().includes(searchTerm));
+                const matchesCategory = !categoryFilter || product.id_categoria == categoryFilter;
+                const matchesStock = !stockFilter || 
+                                    (stockFilter === 'low' && product.stock <= 19 && product.stock > 0) ||
+                                    (stockFilter === 'out' && product.stock === 0);
+
+                return matchesSearch && matchesCategory && matchesStock;
+            });
+
+            renderProducts(filteredProducts);
+        }
+
+        function logout() {
+            if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+                localStorage.removeItem('user');
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+</html>
